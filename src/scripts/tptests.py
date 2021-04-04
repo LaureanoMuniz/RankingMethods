@@ -33,10 +33,10 @@ class Tp1TestCase(unittest.TestCase):
 def addTest(cls, inputPath, expectedPath, outputPath):
   """Registra un test nuevo dinamicamente"""
   def dynamicTest(self): self.assertRun(inputPath, expectedPath, outputPath)
-  tname = inputPath.replace("\\", "_").replace("/", "_").replace(".in", "")
+  tname = inputPath.replace("../", "").replace("\\", "_").replace("/", "_").replace(".in", "")
   setattr(cls, tname, dynamicTest)
 
 
 # Para cada archivo .in en la carpeta tests o cualquier subcarpeta, registra un nuevo test dinamicamente, verificando que la salida tenga el mismo contenido que el archivo con igual nombre pero extension .expected
-for fname in listfiles('tests', '*.in'):
+for fname in listfiles('../tests', '*.in'):
   addTest(Tp1TestCase, fname, fname.replace(".in", ".expected"), fname.replace(".in", ".out"))

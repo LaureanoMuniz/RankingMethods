@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include <cassert>
+#include <algorithm>
 
 using namespace std;
 using mat = vector<vector<double>>;
@@ -147,9 +148,13 @@ auto eliminacion_gaussiana(Mat<T> sistema) -> Mat<T> {
 
 void print_rankings(const Torneo &torneo, const Mat<double> & rankings, string path){
 	ofstream file(path);
-	for (int i = 0; i < torneo.equipos(); ++i)
-	{
-		file << torneo.nombres[i] << " " << rankings(i) << endl;
+    vector<pair<int, double>> results;
+	for (int i = 0; i < torneo.equipos(); ++i) {
+        results.emplace_back(stoi(torneo.nombres[i]), rankings(i));
+	}
+    sort(results.begin(), results.end());
+	for(auto [_, rank] : results) {
+        file << rank << endl;
 	}
 }
 
@@ -178,20 +183,20 @@ destination:
  
 int main(int argc, char **argv){
     if(argc != 4) display_usage();
-	ifstream file(argv[2]);
+	ifstream file(argv[1]);
 	Torneo torneo = read_data(file);
     Mat<double> rankings;
-    if (string(argv[1]) == "0"){
+    if (string(argv[3]) == "0"){
 		rankings = eliminacion_gaussiana(sistema_CMM(torneo));	
 	}
-	else if(string(argv[1]) == "1"){
+	else if(string(argv[3]) == "1"){
 		rankings = WP(torneo);
 	}
-	else if(string(argv[1]) == "2"){
+	else if(string(argv[3]) == "2"){
 		//todo
 	}else{
 		cout << "Uso: metodo, inputpath, outputpath" <<  endl;
 	}
-	print_rankings(torneo, rankings, argv[3]);
+	print_rankings(torneo, rankings, argv[2]);
 	return 0;
 }
