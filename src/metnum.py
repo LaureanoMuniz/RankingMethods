@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 from scripts.fabricate import *
 from scripts.settings import *
 from scripts.utils import listfiles
