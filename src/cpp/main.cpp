@@ -170,7 +170,7 @@ Mat<double> WP(const Torneo &torneo){
 }
 
 void display_usage() {
-    cout << R"(uso: ./tp1 algorithm source destination
+    cout << R"(uso: ./tp1 source destination algorithm
 algorithm:
     debe ser 0, 1 o 2
 source:
