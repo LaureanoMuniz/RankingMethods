@@ -143,7 +143,7 @@ struct Mat_Rala {
         }
         return res;
     }
-    Mat<T> transpuesta(){
+    Mat_Rala<T> transpuesta(){
         auto res = Mat_Rala<T>::cero(m, n);
         for(int i = 0; i < n; i++){
             for(auto x: mat[i]){
