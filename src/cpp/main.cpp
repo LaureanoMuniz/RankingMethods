@@ -378,7 +378,7 @@ Mat<double> WP(const Torneo &torneo){
 
 double elo_expectedScore(const double ratingDiff){
     double exponente = ratingDiff/(400.0);
-    return 1 / (1 - pow(10,exponente));
+    return 1 / (1 + pow(10,exponente));
 }
 
 Mat<double> elo_Ratings(const Torneo &torneo, const double K = 32){
