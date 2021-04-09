@@ -71,11 +71,13 @@ struct Mat {
 template<typename T>
 struct Mat_Rala {
     int n, m;
-    T zero = 0;
 	vector<vector<pair<int,T>>> mat;
-    
+    T zero = 0;
     T &operator()(int i, int j = 0) {
         int l = 0, h = mat[i].size();
+        if(h == 0){
+            mat[i].push_back({j, 0});
+        }
         while(h - l > 1){
             int mid = (h + l) / 2;
             if(mat[i][mid].first > j){
@@ -87,16 +89,20 @@ struct Mat_Rala {
         }
         if(mat[i][l].first != j){
             if(l==0 && mat[i][l].first > j){
-                mat[i].insert(mat[i].begin(), 0);
+                mat[i].insert(mat[i].begin(), {j, 0});
             }
             else{
-                mat[i].insert(mat[i].begin() + l + 1, 0);
+                mat[i].insert(mat[i].begin() + l + 1, {j, 0});
+                l++;
             }
         }
-        
+        return mat[i][l].second;
     }
     const T &operator()(int i, int j = 0) const {
         int l = 0, h = mat[i].size();
+        if(h == 0){
+            return zero;
+        }
         while(h - l > 1){
             int mid = (h + l) / 2;
             if(mat[i][mid].first > j){
@@ -114,7 +120,7 @@ struct Mat_Rala {
         }
     }   
 	static Mat_Rala cero(int _n, int _m = 1) {
-        Mat_Rala res { _n, _m, vector<vector<pair<int,T>>>(_n, vector<T>(0)) };
+        Mat_Rala res { _n, _m, vector<vector<pair<int,T>>>(_n) };
 		return res;
     }
 	static Mat_Rala identidad(int _n) {
@@ -137,7 +143,7 @@ struct Mat_Rala {
         }
         return res;
     }
-    Mat_Rala<T> transpuesta(){
+    Mat<T> transpuesta(){
         auto res = Mat_Rala<T>::cero(m, n);
         for(int i = 0; i < n; i++){
             for(auto x: mat[i]){
@@ -148,8 +154,11 @@ struct Mat_Rala {
     }
 	void operacion_2(int fila_1, int fila_2, T multiplo){
         for(auto x : mat[fila_1]){
-            int j = x.second;
+            int j = x.first;
             int l = 0, h = mat[fila_2].size();
+            if(h == 0){
+                mat[fila_2].push_back({j, 0});
+            }
             while(h - l > 1){
                 int mid = (h + l) / 2;
                 if(mat[fila_2][mid].first > j){
@@ -161,20 +170,18 @@ struct Mat_Rala {
             }
             if(mat[fila_2][l].first != j){
                 if(l==0 && mat[fila_2][l].first > j){
-                    mat[fila_2].insert(mat[fila_2].begin(), 0);
+                    mat[fila_2].insert(mat[fila_2].begin(), {j, 0});
                 }
                 else{
-                    mat[fila_2].insert(mat[fila_2].begin() + l + 1, 0);
+                    mat[fila_2].insert(mat[fila_2].begin() + l + 1, {j, 0});
+                    l++;
                 }
             }
-            mat[fila_2][l] = mat[fila_2][l] + x.second * multiplo;
-            if(mat[fila_2][l] == 0){
+            mat[fila_2][l].second = mat[fila_2][l].second + x.second * multiplo;
+            if(mat[fila_2][l].second == 0){
                 mat[fila_2].erase(mat[fila_2].begin()+l);
             }
         }
-		for(int i = 0; i < m; i++){
-			mat[fila_2][i] = mat[fila_2][i] + mat[fila_1][i] * multiplo;
-		}
 	}
 	void operacion_3(int fila_1, int fila_2){
 		swap(mat[fila_1], mat[fila_2]);
@@ -257,12 +264,11 @@ auto ganados_y_perdidos(const Torneo &torneo) -> pair<Mat<T>, Mat<T>> {
 template<typename T>
 auto sistema_CMM(const Torneo &torneo) -> pair< Mat<T>, Mat<T> > {
     auto jugados = Mat<T>::cero(torneo.equipos(), torneo.equipos());
-    
     for(const auto &partido : torneo.partidos) {
         jugados(partido.id_i, partido.id_j) += 1;
         jugados(partido.id_j, partido.id_i) += 1;
     }
-
+   
     auto [ganados, perdidos] = ganados_y_perdidos<T>(torneo);
 
     auto sistema = Mat<T>::cero(torneo.equipos(), torneo.equipos());
@@ -274,6 +280,7 @@ auto sistema_CMM(const Torneo &torneo) -> pair< Mat<T>, Mat<T> > {
         }
         b(i) = 1.0 + (ganados(i) - perdidos(i)) / 2.0;
     }
+    
     
 	return {sistema, b};
 }
