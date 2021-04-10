@@ -18,23 +18,23 @@ struct Config {
 template<typename T>
 struct Mat {
     int n, m;
-	vector<vector<T>> mat;
+    vector<vector<T>> mat;
     T &operator()(int i, int j = 0) {
         return mat[i][j];  
     }
     const T &operator()(int i, int j = 0) const {
         return mat[i][j];  
     }
-	static Mat cero(int _n, int _m = 1) {
+    static Mat cero(int _n, int _m = 1) {
         Mat res { _n, _m, vector<vector<T>>(_n, vector<T>(_m, 0)) };
-		return res;
+        return res;
     }
-	static Mat identidad(int _n) {
+    static Mat identidad(int _n) {
         Mat res = Mat::cero(_n, _n);
         for(int i = 0; i < res.n; i++){
-			res(i, i) = 1;
-		}
-		return res;
+            res(i, i) = 1;
+        }
+        return res;
     }
     Mat<T> extender(Mat <T> A){
         assert(A.m==1 && A.n == n);
@@ -58,20 +58,20 @@ struct Mat {
         }
         return res;
     }
-	void operacion_2(int fila_1, int fila_2, T multiplo){
-		for(int i = 0; i < m; i++){
-			mat[fila_2][i] = mat[fila_2][i] + mat[fila_1][i] * multiplo;
-		}
-	}
-	void operacion_3(int fila_1, int fila_2){
-		swap(mat[fila_1], mat[fila_2]);
-	}
+    void operacion_2(int fila_1, int fila_2, T multiplo){
+        for(int i = 0; i < m; i++){
+            mat[fila_2][i] = mat[fila_2][i] + mat[fila_1][i] * multiplo;
+        }
+    }
+    void operacion_3(int fila_1, int fila_2){
+        swap(mat[fila_1], mat[fila_2]);
+    }
 };
 
 template<typename T>
 struct Mat_Rala {
     int n, m;
-	vector<vector<pair<int,T>>> mat;
+    vector<vector<pair<int,T>>> mat;
     T zero = 0;
     T &operator()(int i, int j = 0) {
         int l = 0, h = mat[i].size();
@@ -119,16 +119,16 @@ struct Mat_Rala {
             return zero;
         }
     }   
-	static Mat_Rala cero(int _n, int _m = 1) {
+    static Mat_Rala cero(int _n, int _m = 1) {
         Mat_Rala res { _n, _m, vector<vector<pair<int,T>>>(_n) };
-		return res;
+        return res;
     }
-	static Mat_Rala identidad(int _n) {
+    static Mat_Rala identidad(int _n) {
         Mat_Rala res = Mat_Rala::cero(_n, _n);
         for(int i = 0; i < res.n; i++){
-			res(i, i) = 1;
-		}
-		return res;
+            res(i, i) = 1;
+        }
+        return res;
     }
     Mat_Rala<T> extender(Mat_Rala <T> A){
         assert(A.m==1 && A.n == n);
@@ -152,7 +152,7 @@ struct Mat_Rala {
         }
         return res;
     }
-	void operacion_2(int fila_1, int fila_2, T multiplo){
+    void operacion_2(int fila_1, int fila_2, T multiplo){
         for(auto x : mat[fila_1]){
             int j = x.first;
             int l = 0, h = mat[fila_2].size();
@@ -182,10 +182,10 @@ struct Mat_Rala {
                 mat[fila_2].erase(mat[fila_2].begin()+l);
             }
         }
-	}
-	void operacion_3(int fila_1, int fila_2){
-		swap(mat[fila_1], mat[fila_2]);
-	}
+    }
+    void operacion_3(int fila_1, int fila_2){
+        swap(mat[fila_1], mat[fila_2]);
+    }
 };
 
 
@@ -282,46 +282,46 @@ auto sistema_CMM(const Torneo &torneo) -> pair< Mat<T>, Mat<T> > {
     }
     
     
-	return {sistema, b};
+    return {sistema, b};
 }
 
 template<typename T>
 auto backwards_substitution(Mat<T> &sistema) -> Mat<T>{
     auto result = Mat<T>::cero(sistema.n);
-	for (int i = sistema.n - 1; i >= 0; i--){
-		T acum = 0;
-		for (int j = i + 1; j < sistema.n; j++){
-			acum += ( result(j) *  sistema(i, j) );
-		}
-		result(i) = ( sistema(i, sistema.n) - acum ) / sistema(i, i);
-	}
+    for (int i = sistema.n - 1; i >= 0; i--){
+        T acum = 0;
+        for (int j = i + 1; j < sistema.n; j++){
+            acum += ( result(j) *  sistema(i, j) );
+        }
+        result(i) = ( sistema(i, sistema.n) - acum ) / sistema(i, i);
+    }
     return result;
 }
 
 template<typename T>
 auto forward_substitution(Mat<T> &sistema) -> Mat<T>{
     auto result = Mat<T>::cero(sistema.n);
-	for (int i = 0; i < sistema.n; i++){
-		T acum = 0;
-		for (int j = 0; j < i; j++){
-			acum += ( result(j) *  sistema(i, j) );
-		}
-		result(i) = ( sistema(i, sistema.n) - acum ) / sistema(i, i);
-	}
+    for (int i = 0; i < sistema.n; i++){
+        T acum = 0;
+        for (int j = 0; j < i; j++){
+            acum += ( result(j) *  sistema(i, j) );
+        }
+        result(i) = ( sistema(i, sistema.n) - acum ) / sistema(i, i);
+    }
     return result;
 }
 
 template<typename T>
 auto eliminacion_gaussiana(Mat<T> A, Mat<T> b) -> Mat<T> {
     auto sistema = A.extender(b);
-	for (int i = 0; i < sistema.n; ++i){
-		assert(sistema(i,i) != 0);
-		for (int j = i + 1; j < sistema.n; j++){
-			T coef = sistema(j, i) / sistema(i, i);
-			sistema.operacion_2(i, j, -coef);
-		}
-	}
-	return backwards_substitution(sistema);
+    for (int i = 0; i < sistema.n; ++i){
+        assert(sistema(i,i) != 0);
+        for (int j = i + 1; j < sistema.n; j++){
+            T coef = sistema(j, i) / sistema(i, i);
+            sistema.operacion_2(i, j, -coef);
+        }
+    }
+    return backwards_substitution(sistema);
 }
 
 template<typename T> 
@@ -356,24 +356,24 @@ auto cholesky(Mat<T> A, Mat<T> b) -> Mat<T> {
 template<typename Of>
 void print_rankings(const Torneo &torneo, const Mat<double> & rankings, Of &file) {
     vector<pair<int, double>> results;
-	for (int i = 0; i < torneo.equipos(); ++i) {
+    for (int i = 0; i < torneo.equipos(); ++i) {
         results.emplace_back(stoi(torneo.nombres[i]), rankings(i));
-	}
+    }
     sort(results.begin(), results.end());
-	for(auto [_, rank] : results) {
+    for(auto [_, rank] : results) {
         file << rank << endl;
-	}
+    }
 }
 
 Mat<double> WP(const Torneo &torneo){
 
-	auto result = Mat<double>::cero(torneo.equipos()); 
-	auto [ganados, perdidos] = ganados_y_perdidos<double>(torneo);
-	for (int i = 0; i < torneo.equipos(); ++i)
-	{
-		result(i) = ganados(i)/(ganados(i)+perdidos(i));
-	}
-	return result;
+    auto result = Mat<double>::cero(torneo.equipos()); 
+    auto [ganados, perdidos] = ganados_y_perdidos<double>(torneo);
+    for (int i = 0; i < torneo.equipos(); ++i)
+    {
+        result(i) = ganados(i)/(ganados(i)+perdidos(i));
+    }
+    return result;
 }
 
 double elo_expectedScore(const double ratingDiff){
@@ -423,19 +423,19 @@ int main(int argc, char **argv) {
         if(s == "float_output_exact") config.float_output_exact = true;
     }
 
-	ifstream file(argv[1]);
-	Torneo torneo = read_data(file);
+    ifstream file(argv[1]);
+    Torneo torneo = read_data(file);
     Mat<double> rankings;
     if (string(argv[3]) == "0") {
         auto sistema = sistema_CMM<double>(torneo);
-		rankings = eliminacion_gaussiana(sistema.first, sistema.second);	
-	}
-	else if(string(argv[3]) == "1"){
-		rankings = WP(torneo);
-	}
-	else if(string(argv[3]) == "2"){
-		rankings = elo_Ratings(torneo);
-	}
+        rankings = eliminacion_gaussiana(sistema.first, sistema.second);	
+    }
+    else if(string(argv[3]) == "1"){
+        rankings = WP(torneo);
+    }
+    else if(string(argv[3]) == "2"){
+        rankings = elo_Ratings(torneo);
+    }
     else if(string(argv[3]) == "3"){
         auto sistema = sistema_CMM<double>(torneo);
         rankings = cholesky(sistema.first, sistema.second);
@@ -444,9 +444,9 @@ int main(int argc, char **argv) {
 
     if(string(argv[2]) == "-") {
         ofstream output(argv[2]);
-	    print_rankings(torneo, rankings, output);
+        print_rankings(torneo, rankings, output);
     } else {
-	    print_rankings(torneo, rankings, std::cout);
+        print_rankings(torneo, rankings, std::cout);
     }
-	return 0;
+    return 0;
 }
