@@ -52,22 +52,23 @@ class Ranking:
 class Corrida:
     def __init__(self, torneo, *args):
         if type(torneo) is not Torneo:
-            if type(torneo) is str:
-                torneo = Path() / 'tests' / torneo
             torneo = Torneo.from_file(torneo)
 
         if Args.SIZE in args:
             self.n, self.m = torneo.n, torneo.m
 
-        result = subprocess.run([
+        command = [
             './tp',
             '-',
             '-',
-            *map(lambda x: x.value, args)],
+            *map(lambda x: x.value, args)]
+        result = subprocess.run(
+            command,
             stdout=subprocess.PIPE,
             text=True,
             input=str(torneo))
-
+        # print(f"torneo: Torneo")
+        # print(" ".join(command))
         values = result.stdout.split()
         # print(result.stdout)
         if Args.EXACT_OUTPUT in args:
@@ -87,7 +88,8 @@ class Corrida:
         elif Args.TIME in args:
             self.elapsed = int(values[0]) * 1e-6
         elif Args.SHOW_ID in args:
-            print(values)
+            # print("values:")
+            # print(result.stdout)
             rating = dict()
             for i in range(len(values) // 2):
                 rating[values[2*i]] = float(values[2*i+1])
@@ -180,8 +182,8 @@ def distance(filepath):
         ys.append(rankings.distance(posta))
         print(ys[-1])
 
-    # ax.bar(xs, ys)
-    # plt.show()
+    ax.bar(xs, ys)
+    plt.show()
 
 
 def experimentar():
@@ -196,5 +198,5 @@ def experimentar():
     ])"""
     # precision(['test_completos/test_completo_100_4.in'])
     # tiempo_random()
-    distance('Tests_Propios/Tenis_2020_21.dat')
+    distance(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
     # precision(['test-prob-1.in'])

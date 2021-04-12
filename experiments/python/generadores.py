@@ -27,9 +27,9 @@ class Torneo:
 
     def __str__(self):
         stream = StringIO()
-        stream.write(f"{self.n} {self.m}")
+        stream.write(f"{self.n} {self.m}\n")
         for juego in self.juegos:
-            stream.write(f"{juego.fecha} {juego.i} {juego.j} {juego.pi} {juego.pj}")
+            stream.write(f"{juego.fecha} {juego.i} {juego.j} {juego.pi} {juego.pj}\n")
 
         return stream.getvalue()
 
