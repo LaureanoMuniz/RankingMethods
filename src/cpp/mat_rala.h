@@ -1,4 +1,6 @@
 
+ld eps = 1e-9;
+
 struct Mat {
     int n, m;
     vector<vector<pair<int,ld>>> mat;
@@ -83,6 +85,7 @@ struct Mat {
         return res;
     }
     void operacion_2(int fila_1, int fila_2, ld multiplo){
+        if(abs(multiplo) < eps) return;
         for(auto x : mat[fila_1]){
             int j = x.first;
             int l = 0, h = mat[fila_2].size();

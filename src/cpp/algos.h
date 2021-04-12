@@ -238,8 +238,13 @@ Mat elo_Ratings(const Torneo &torneo, const ld K = 32){
 }
 
 void correr() {
-    ifstream file(config.input);
-    Torneo torneo = read_data(file);
+    Torneo torneo;
+    if(config.input == "-") {
+        torneo = read_data(cin);
+    } else {
+        ifstream file(config.input);
+        Torneo torneo = read_data(file);
+    }
     Mat rankings;
     pair<Mat, Mat> sistema;
     auto start = chrono::steady_clock::now();

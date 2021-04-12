@@ -1,12 +1,15 @@
+import math
+from random import Random
+from experiments.python.generadores import Torneo, clusters
 from experiments.python.rational import Rational, reduce, back_subst
 import enum
 from pathlib import Path
 import subprocess
 
 import matplotlib.pyplot as plt
-import numpy as py
 
-import math
+from tqdm import tqdm
+
 
 class Args(enum.Enum):
     DISPLAY_MATRIX = "display_matrix"
@@ -23,20 +26,23 @@ class Args(enum.Enum):
 
 
 class Corrida:
-    def __init__(self, filepath, *args):
-        path = Path() / 'tests' / filepath
+    def __init__(self, torneo, *args):
+        if type(torneo) is not Torneo:
+            if type(torneo) is str:
+                torneo = Path() / 'tests' / torneo
+            torneo = Torneo.from_file(torneo)
+
         if Args.SIZE in args:
-            with path.open() as f:
-                self.n, self.m = map(int, f.readline().split(' '))
-            return
+            self.n, self.m = torneo.n, torneo.m
 
         result = subprocess.run([
             './tp',
-            path,
+            '-',
             '-',
             *map(lambda x: x.value, args)],
             stdout=subprocess.PIPE,
-            text=True)
+            text=True,
+            input=str(torneo))
 
         values = result.stdout.split()
         # print(result.stdout)
@@ -100,8 +106,35 @@ def tiempo(filepaths):
     plt.show()
 
 
+def tiempo_random():
+    fig, ax = plt.subplots()
+    rng = Random(1)
+    k = 10
+    xs = []
+    ys = []
+    cs = []
+    for k in tqdm([-1, 1, 100]):
+        for n in tqdm(range(500, 1001, 100)):
+            q = k
+            if k == -1:
+                q = 1
+            torneo = clusters(rng, n, q, 1/200, 0.0)
+            if k == -1:
+                time = Corrida(torneo, Args.CMM, Args.TIME).elapsed
+            else:
+                time = Corrida(torneo, Args.CMM, Args.RALA, Args.TIME).elapsed
+            xs.append(n)
+            ys.append(math.log(time))
+            cs.append(k)
+    mp = ax.scatter(xs, ys, c=cs, cmap='viridis')
+
+    fig.colorbar(mp)
+
+    plt.show()
+
+
 def experimentar():
-    tiempo([
+    """tiempo([
         'test-prob-1.in',
         'test-prob-2.in',
         'test1.in',
@@ -109,6 +142,7 @@ def experimentar():
         'test_completos/test_completo_10_1.in',
         'test_completos/test_completo_100_4.in',
         'test_completos/test_completo_1000_8.in',
-    ])
+    ])"""
     # precision(['test_completos/test_completo_100_4.in'])
+    tiempo_random()
     # precision(['test-prob-1.in'])

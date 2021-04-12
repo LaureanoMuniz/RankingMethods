@@ -1,5 +1,6 @@
 import math
 
+
 class Rational():
     def __init__(self, num, den):
         if den < 0:
