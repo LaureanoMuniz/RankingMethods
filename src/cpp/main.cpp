@@ -19,6 +19,7 @@ struct Config {
     bool time = false;
     bool rala = false;
     bool internal_id = false;
+    bool show_id = false;
     string input;
     string output;
     string algo;
@@ -64,6 +65,7 @@ int main(int argc, char **argv) {
         else if(s == "time") config.time = true;
         else if(s == "rala") config.rala = true;
         else if(s == "internal_id") config.internal_id = true;
+        else if(s == "show_id") config.show_id = true;
     }
 
     if(config.rala) Rala::correr();

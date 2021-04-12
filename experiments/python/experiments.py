@@ -17,12 +17,36 @@ class Args(enum.Enum):
     RALA = "rala"
     TIME = "time"
     INTERNAL_ID = "internal_id"
+    SHOW_ID = "show_id"
     SIZE = "size"
 
     CMM = "0"
     WP = "1"
     ELO = "2"
     CHOLESKY = "3"
+
+
+class Ranking:
+    def __init__(self, ranking: dict):
+        self.ranking = ranking
+
+    def distance(self, o):
+        total = 0.0
+        print(list(self.ranking.keys())[:10])
+        print(list(o.ranking.keys())[:10])
+        for k in self.ranking.keys():
+            if k in o.ranking:
+                total += math.log(self.ranking[k]) - math.log(o.ranking[k])
+        return total
+
+    def from_file(file):
+        with file.open() as f:
+            lines = f.readlines()
+            ranking = dict()
+            for line in lines:
+                _, pos, id, _ = line.split(',')
+                ranking[id] = int(pos)
+            return Ranking(ranking)
 
 
 class Corrida:
@@ -62,6 +86,15 @@ class Corrida:
                 self.mat[i][n] = int(values[1 + n*n + i])
         elif Args.TIME in args:
             self.elapsed = int(values[0]) * 1e-6
+        elif Args.SHOW_ID in args:
+            print(values)
+            rating = dict()
+            for i in range(len(values) // 2):
+                rating[values[2*i]] = float(values[2*i+1])
+            ranking = list(rating.keys())
+            ranking.sort(key=lambda x: rating[x])
+            self.ranking = Ranking({
+                ranking[i]: i+1 for i in range(len(ranking))})
         else:
             self.ratings = list(map(lambda x: float(x), values))
 
@@ -133,6 +166,24 @@ def tiempo_random():
     plt.show()
 
 
+def distance(filepath):
+    fig, ax = plt.subplots()
+    posta = Ranking.from_file(
+        Path() / 'tests' / 'Tests_Propios' / 'Tennis_Ranking_2021.csv')
+
+    xs = []
+    ys = []
+
+    for algo in [Args.CMM, Args.ELO, Args.WP]:
+        rankings = Corrida(filepath, algo, Args.SHOW_ID).ranking
+        xs.append(algo.value)
+        ys.append(rankings.distance(posta))
+        print(ys[-1])
+
+    # ax.bar(xs, ys)
+    # plt.show()
+
+
 def experimentar():
     """tiempo([
         'test-prob-1.in',
@@ -144,5 +195,6 @@ def experimentar():
         'test_completos/test_completo_1000_8.in',
     ])"""
     # precision(['test_completos/test_completo_100_4.in'])
-    tiempo_random()
+    # tiempo_random()
+    distance('Tests_Propios/Tenis_2020_21.dat')
     # precision(['test-prob-1.in'])

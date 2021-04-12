@@ -167,13 +167,18 @@ void print_rankings(const Torneo &torneo, const Mat & rankings, Of &file) {
             rankings(i));
     }
     sort(results.begin(), results.end());
-    for(auto [_, rank] : results) {
+    for(auto [player, rank] : results) {
+        if(config.show_id) {
+            file << player << " ";
+        }
         if(config.float_output_exact) {
             int ex = 0;
             ld res = frexp(rank, &ex) * pow(ld(2.0), ld(54));
             ex -= 54;
-            cout << (long long)(res + 0.5) << " " << -ex << endl;
-        } else file << rank << endl;
+            file << (long long)(res + 0.5) << " " << -ex << endl;
+        } else {
+            file << rank << endl;
+        }
     }
 }
 
@@ -243,7 +248,7 @@ void correr() {
         torneo = read_data(cin);
     } else {
         ifstream file(config.input);
-        Torneo torneo = read_data(file);
+        torneo = read_data(file);
     }
     Mat rankings;
     pair<Mat, Mat> sistema;
