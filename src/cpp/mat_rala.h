@@ -1,5 +1,5 @@
 
-ld eps = 1e-9;
+ld eps = 1e-5;
 
 struct Mat {
     int n, m;
@@ -88,31 +88,23 @@ struct Mat {
         if(abs(multiplo) < eps) return;
         for(auto x : mat[fila_1]){
             int j = x.first;
-            int l = 0, h = mat[fila_2].size();
-            if(h == 0){
-                mat[fila_2].push_back({j, 0});
-            }
+            int l = -1, h = mat[fila_2].size();
+
             while(h - l > 1){
                 int mid = (h + l) / 2;
-                if(mat[fila_2][mid].first > j){
+                if(mat[fila_2][mid].first >= j){
                     h = mid;
                 }
                 else{
                     l = mid;
                 }
             }
-            if(mat[fila_2][l].first != j){
-                if(l==0 && mat[fila_2][l].first > j){
-                    mat[fila_2].insert(mat[fila_2].begin(), {j, 0});
-                }
-                else{
-                    mat[fila_2].insert(mat[fila_2].begin() + l + 1, {j, 0});
-                    l++;
-                }
+            if(h == mat[fila_2].size() || mat[fila_2][h].first != j) {
+                mat[fila_2].insert(mat[fila_2].begin()+h, {j, 0});
             }
-            mat[fila_2][l].second = mat[fila_2][l].second + x.second * multiplo;
-            if(mat[fila_2][l].second == 0){
-                mat[fila_2].erase(mat[fila_2].begin()+l);
+            mat[fila_2][h].second = mat[fila_2][h].second + x.second * multiplo;
+            if(abs(mat[fila_2][h].second) < eps){
+                mat[fila_2].erase(mat[fila_2].begin()+h);
             }
         }
     }

@@ -1,3 +1,6 @@
+
+ld eps = 1e-5;
+
 struct Mat {
     int n, m;
     vector<vector<ld>> mat;

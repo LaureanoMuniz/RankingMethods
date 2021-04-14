@@ -1,6 +1,6 @@
 import math
 from random import Random
-from experiments.python.generadores import Torneo, clusters
+from experiments.python.generadores import Torneo, clusters, diagonal
 from experiments.python.rational import Rational, reduce, back_subst
 import enum
 from pathlib import Path
@@ -148,19 +148,42 @@ def tiempo_random():
     xs = []
     ys = []
     cs = []
-    for k in tqdm([-1, 1, 100]):
+    for k in tqdm([-100, 1, 100]):
         for n in tqdm(range(500, 1001, 100)):
             q = k
-            if k == -1:
+            if k == -100:
                 q = 1
             torneo = clusters(rng, n, q, 1/200, 0.0)
-            if k == -1:
+            if k == -100:
                 time = Corrida(torneo, Args.CMM, Args.TIME).elapsed
             else:
                 time = Corrida(torneo, Args.CMM, Args.RALA, Args.TIME).elapsed
             xs.append(n)
             ys.append(math.log(time))
             cs.append(k)
+    mp = ax.scatter(xs, ys, c=cs, cmap='viridis')
+
+    fig.colorbar(mp)
+
+    plt.show()
+
+
+def diag():
+    fig, ax = plt.subplots()
+    xs = []
+    ys = []
+    cs = []
+
+    for n in tqdm(range(100, 1001, 100)):
+        torneo = diagonal(n)
+        rala = Corrida(torneo, Args.CMM, Args.TIME, Args.RALA).elapsed
+        # normal = Corrida(torneo, Args.CMM, Args.TIME).elapsed
+        xs.append(n)
+        # xs.append(n)
+        ys.append(math.log(rala))
+        # ys.append(math.log(normal))
+        cs.append(0)
+        # cs.append(1)
     mp = ax.scatter(xs, ys, c=cs, cmap='viridis')
 
     fig.colorbar(mp)
@@ -198,5 +221,6 @@ def experimentar():
     ])"""
     # precision(['test_completos/test_completo_100_4.in'])
     # tiempo_random()
-    distance(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
+    diag()
+    # distance(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
     # precision(['test-prob-1.in'])

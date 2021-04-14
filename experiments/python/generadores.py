@@ -77,3 +77,8 @@ def torneo(rng: Random, n):
         equipos.append(a)
 
     return Torneo(n, juegos)
+
+
+def diagonal(n):
+    juegos = [Juego(i, i+1, 0, 1) for i in range(n-1)]
+    return Torneo(n, juegos)

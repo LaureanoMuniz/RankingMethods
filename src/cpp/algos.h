@@ -77,23 +77,27 @@ pair<Mat, Mat> sistema_CMM(const Torneo &torneo) {
         jugados.ref(partido.id_i, partido.id_j) += 1;
         jugados.ref(partido.id_j, partido.id_i) += 1;
     }
-   
+
     auto [ganados, perdidos] = ganados_y_perdidos(torneo);
 
     auto sistema = Mat::cero(torneo.equipos(), torneo.equipos());
     auto b = Mat::cero(torneo.equipos());
+    int total = 0;
     for(int i = 0; i < torneo.equipos(); ++i) {
         for(int j = 0; j < torneo.equipos(); ++j) {
             if(i != j) {
-            	if(-jugados(i,j) != 0){
-            		sistema.ref(i, j) = -jugados(i, j);
-            	}
+                if(abs(jugados(i, j)) > eps){
+                    total ++;
+                    sistema.ref(i, j) = -jugados(i, j);
+                }
             }
             else sistema.ref(i, j) = 2.0 + ganados(i) + perdidos(i);
         }
         b.ref(i) = 1.0 + (ganados(i) - perdidos(i)) / 2.0;
     }
-    
+    for(int i = 0; i < torneo.equipos(); ++i) {
+        cerr << sistema.mat[i].size() << endl;
+    }
     
     return {sistema, b};
 }
@@ -125,15 +129,19 @@ Mat forward_substitution(Mat &sistema) {
 
 
 auto eliminacion_gaussiana(Mat A, Mat b) -> Mat {
-    auto sistema = A.extender(b);
+    // auto sistema = A.extender(b);
+    auto &sistema = A;
     for (int i = 0; i < sistema.n; ++i){
+        // cerr << A.mat[i].size() << endl;
         assert(sistema(i,i) != 0);
         for (int j = i + 1; j < sistema.n; j++){
             ld coef = sistema(j, i) / sistema(i, i);
-            sistema.operacion_2(i, j, -coef);
+            if(abs(coef) > 1e-5)
+                sistema.operacion_2(i, j, -coef);
         }
     }
-    return backwards_substitution(sistema);
+    return sistema;
+    // return backwards_substitution(sistema);
 }
 
 auto cholesky(Mat A, Mat b) -> Mat {
