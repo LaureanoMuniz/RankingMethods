@@ -1,7 +1,7 @@
 struct Mat {
     int n, m;
     vector<vector<ld>> mat;
-    ld &operator()(int i, int j = 0) {
+    ld& ref(int i, int j = 0) {
         return mat[i][j];  
     }
     const ld &operator()(int i, int j = 0) const {
@@ -14,7 +14,7 @@ struct Mat {
     static Mat identidad(int _n) {
         Mat res = Mat::cero(_n, _n);
         for(int i = 0; i < res.n; i++){
-            res(i, i) = 1;
+            res.ref(i, i) = 1;
         }
         return res;
     }
@@ -23,11 +23,11 @@ struct Mat {
         auto res = Mat::cero(n, m + 1);
         for(int i = 0; i < n; i++){
             for(int j = 0; j < m; j++){
-                res(i, j) = mat[i][j];
+                res.ref(i, j) = mat[i][j];
             }
         }
         for(int i = 0; i < m; i++){
-            res(i, m) = A(i); 
+            res.ref(i, m) = A(i); 
         }
         return res;
     }
@@ -35,7 +35,7 @@ struct Mat {
         auto res = Mat::cero(m, n);
         for(int i = 0; i < n; i++){
             for(int j = 0; j < m; j++){
-                res(j, i) = mat[i][j];
+                res.ref(j, i) = mat[i][j];
             }
         }
         return res;

@@ -51,10 +51,10 @@ pair<Mat, Mat> ganados_y_perdidos(const Torneo &torneo) {
     
     for(const auto &partido : torneo.partidos) {
         if(partido.puntos_i == partido.puntos_j) {
-            ganados(partido.id_i) +=  0.5;
-            perdidos(partido.id_i) += 0.5;
-            ganados(partido.id_j) +=  0.5;
-            perdidos(partido.id_j) += 0.5;
+            ganados.ref(partido.id_i) +=  0.5;
+            perdidos.ref(partido.id_i) += 0.5;
+            ganados.ref(partido.id_j) +=  0.5;
+            perdidos.ref(partido.id_j) += 0.5;
         } else {
             int ganador, perdedor;
             if(partido.puntos_i > partido.puntos_j) {
@@ -64,8 +64,8 @@ pair<Mat, Mat> ganados_y_perdidos(const Torneo &torneo) {
                 ganador = partido.id_j;
                 perdedor = partido.id_i;
             }
-            ganados(ganador) += 1;
-            perdidos(perdedor) += 1;
+            ganados.ref(ganador) += 1;
+            perdidos.ref(perdedor) += 1;
         }
     }
     return {ganados, perdidos};
@@ -74,8 +74,8 @@ pair<Mat, Mat> ganados_y_perdidos(const Torneo &torneo) {
 pair<Mat, Mat> sistema_CMM(const Torneo &torneo) {
     auto jugados = Mat::cero(torneo.equipos(), torneo.equipos());
     for(const auto &partido : torneo.partidos) {
-        jugados(partido.id_i, partido.id_j) += 1;
-        jugados(partido.id_j, partido.id_i) += 1;
+        jugados.ref(partido.id_i, partido.id_j) += 1;
+        jugados.ref(partido.id_j, partido.id_i) += 1;
     }
    
     auto [ganados, perdidos] = ganados_y_perdidos(torneo);
@@ -84,10 +84,14 @@ pair<Mat, Mat> sistema_CMM(const Torneo &torneo) {
     auto b = Mat::cero(torneo.equipos());
     for(int i = 0; i < torneo.equipos(); ++i) {
         for(int j = 0; j < torneo.equipos(); ++j) {
-            if(i != j) sistema(i, j) = -jugados(i, j);
-            else sistema(i, j) = 2.0 + ganados(i) + perdidos(i);
+            if(i != j) {
+            	if(-jugados(i,j) != 0){
+            		sistema.ref(i, j) = -jugados(i, j);
+            	}
+            }
+            else sistema.ref(i, j) = 2.0 + ganados(i) + perdidos(i);
         }
-        b(i) = 1.0 + (ganados(i) - perdidos(i)) / 2.0;
+        b.ref(i) = 1.0 + (ganados(i) - perdidos(i)) / 2.0;
     }
     
     
@@ -101,7 +105,7 @@ Mat backwards_substitution(Mat &sistema) {
         for (int j = i + 1; j < sistema.n; j++){
             acum += ( result(j) *  sistema(i, j) );
         }
-        result(i) = ( sistema(i, sistema.n) - acum ) / sistema(i, i);
+        result.ref(i) = ( sistema(i, sistema.n) - acum ) / sistema(i, i);
     }
     return result;
 }
@@ -114,7 +118,7 @@ Mat forward_substitution(Mat &sistema) {
         for (int j = 0; j < i; j++){
             acum += ( result(j) *  sistema(i, j) );
         }
-        result(i) = ( sistema(i, sistema.n) - acum ) / sistema(i, i);
+        result.ref(i) = ( sistema(i, sistema.n) - acum ) / sistema(i, i);
     }
     return result;
 }
@@ -141,12 +145,12 @@ auto cholesky(Mat A, Mat b) -> Mat {
                 for(int k = 0; k < i;k++){
                     acum += pow(L(i, k), 2);
                 }
-                L(i, i) = sqrt(A(i, i) - acum);
+                L.ref(i, i) = sqrt(A(i, i) - acum);
             } else {
                 for(int k = 0; k < j; k++){
                     acum += L(i, k) * L(j, k);
                 }
-                L(i, j) = (A(i, j) - acum) / L(j, j);
+                L.ref(i, j) = (A(i, j) - acum) / L(j, j);
             }
         }
     }
@@ -210,7 +214,7 @@ Mat WP(const Torneo &torneo){
     auto [ganados, perdidos] = ganados_y_perdidos(torneo);
     for (int i = 0; i < torneo.equipos(); ++i)
     {
-        result(i) = ganados(i)/(ganados(i)+perdidos(i));
+        result.ref(i) = ganados(i)/(ganados(i)+perdidos(i));
     }
     return result;
 }
@@ -223,7 +227,7 @@ ld elo_expectedScore(const ld ratingDiff){
 Mat elo_Ratings(const Torneo &torneo, const ld K = 32){
     Mat ratings = Mat::cero(torneo.equipos()); 
     for (int i = 0; i < torneo.equipos(); i++){
-        ratings(i) = 1000.0;
+        ratings.ref(i) = 1000.0;
     }
     for (auto partido_actual: torneo.partidos){
         //numeros que hacen falta
@@ -236,8 +240,8 @@ Mat elo_Ratings(const Torneo &torneo, const ld K = 32){
         ld expected_I = elo_expectedScore(ratingDiff_I);
 
         //se actualizan los ratings 
-        ratings(partido_actual.id_i) += (scoreI - expected_I) * K;
-        ratings(partido_actual.id_j) += (scoreJ - expected_J) * K; 
+        ratings.ref(partido_actual.id_i) += (scoreI - expected_I) * K;
+        ratings.ref(partido_actual.id_j) += (scoreJ - expected_J) * K; 
     }
     return ratings;
 }

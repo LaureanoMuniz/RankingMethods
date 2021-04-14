@@ -5,7 +5,7 @@ struct Mat {
     int n, m;
     vector<vector<pair<int,ld>>> mat;
     ld zero = 0;
-    ld &operator()(int i, int j = 0) {
+    ld& ref(int i, int j = 0) {
         int l = 0, h = mat[i].size();
         if(h == 0){
             mat[i].push_back({j, 0});
@@ -58,7 +58,7 @@ struct Mat {
     static Mat identidad(int _n) {
         Mat res = Mat::cero(_n, _n);
         for(int i = 0; i < res.n; i++){
-            res(i, i) = 1;
+            res.ref(i, i) = 1;
         }
         return res;
     }
