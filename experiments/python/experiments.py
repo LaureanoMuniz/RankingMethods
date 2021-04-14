@@ -30,14 +30,16 @@ class Ranking:
     def __init__(self, ranking: dict):
         self.ranking = ranking
 
-    def distance(self, o):
-        total = 0.0
-        print(list(self.ranking.keys())[:10])
-        print(list(o.ranking.keys())[:10])
+    def distances(self, o):
+        distances = []
         for k in self.ranking.keys():
             if k in o.ranking:
-                total += math.log(self.ranking[k]) - math.log(o.ranking[k])
-        return total
+                distances.append(
+                    math.log(self.ranking[k]) - math.log(o.ranking[k]))
+        return distances
+
+    def distance(self, o):
+        return sum(self.distances(o))
 
     def from_file(file):
         with file.open() as f:
@@ -153,9 +155,9 @@ def tiempo_random():
             q = k
             if k == -100:
                 q = 1
-            torneo = clusters(rng, n, q, 1/200, 0.0)
+            torneo = clusters(rng, n, q, 1/200, 1/2000)
             if k == -100:
-                time = Corrida(torneo, Args.CMM, Args.TIME).elapsed
+                time = Corrida(torneo, Args.CHOLESKY, Args.TIME).elapsed
             else:
                 time = Corrida(torneo, Args.CMM, Args.RALA, Args.TIME).elapsed
             xs.append(n)
@@ -177,13 +179,13 @@ def diag():
     for n in tqdm(range(100, 1001, 100)):
         torneo = diagonal(n)
         rala = Corrida(torneo, Args.CMM, Args.TIME, Args.RALA).elapsed
-        # normal = Corrida(torneo, Args.CMM, Args.TIME).elapsed
+        normal = Corrida(torneo, Args.CMM, Args.TIME).elapsed
         xs.append(n)
-        # xs.append(n)
+        xs.append(n)
         ys.append(math.log(rala))
-        # ys.append(math.log(normal))
+        ys.append(math.log(normal))
         cs.append(0)
-        # cs.append(1)
+        cs.append(1)
     mp = ax.scatter(xs, ys, c=cs, cmap='viridis')
 
     fig.colorbar(mp)
@@ -196,16 +198,16 @@ def distance(filepath):
     posta = Ranking.from_file(
         Path() / 'tests' / 'Tests_Propios' / 'Tennis_Ranking_2021.csv')
 
-    xs = []
-    ys = []
+    cs = []
 
     for algo in [Args.CMM, Args.ELO, Args.WP]:
+        ys = []
         rankings = Corrida(filepath, algo, Args.SHOW_ID).ranking
-        xs.append(algo.value)
-        ys.append(rankings.distance(posta))
-        print(ys[-1])
+        for d in rankings.distances(posta):
+            # cs.append(algo.value)
+            ys.append(d)
 
-    ax.bar(xs, ys)
+        ax.hist(ys, bins=20, histtype='step')
     plt.show()
 
 
@@ -221,6 +223,6 @@ def experimentar():
     ])"""
     # precision(['test_completos/test_completo_100_4.in'])
     # tiempo_random()
-    diag()
-    # distance(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
+    # diag()
+    distance(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
     # precision(['test-prob-1.in'])

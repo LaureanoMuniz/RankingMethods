@@ -82,21 +82,16 @@ pair<Mat, Mat> sistema_CMM(const Torneo &torneo) {
 
     auto sistema = Mat::cero(torneo.equipos(), torneo.equipos());
     auto b = Mat::cero(torneo.equipos());
-    int total = 0;
     for(int i = 0; i < torneo.equipos(); ++i) {
         for(int j = 0; j < torneo.equipos(); ++j) {
             if(i != j) {
                 if(abs(jugados(i, j)) > eps){
-                    total ++;
                     sistema.ref(i, j) = -jugados(i, j);
                 }
             }
             else sistema.ref(i, j) = 2.0 + ganados(i) + perdidos(i);
         }
         b.ref(i) = 1.0 + (ganados(i) - perdidos(i)) / 2.0;
-    }
-    for(int i = 0; i < torneo.equipos(); ++i) {
-        cerr << sistema.mat[i].size() << endl;
     }
     
     return {sistema, b};
@@ -129,19 +124,19 @@ Mat forward_substitution(Mat &sistema) {
 
 
 auto eliminacion_gaussiana(Mat A, Mat b) -> Mat {
-    // auto sistema = A.extender(b);
-    auto &sistema = A;
+    auto sistema = A.extender(b);
+    // auto &sistema = A;
     for (int i = 0; i < sistema.n; ++i){
         // cerr << A.mat[i].size() << endl;
         assert(sistema(i,i) != 0);
         for (int j = i + 1; j < sistema.n; j++){
             ld coef = sistema(j, i) / sistema(i, i);
-            if(abs(coef) > 1e-5)
+            if(abs(coef) > eps)
                 sistema.operacion_2(i, j, -coef);
         }
     }
     return sistema;
-    // return backwards_substitution(sistema);
+    return backwards_substitution(sistema);
 }
 
 auto cholesky(Mat A, Mat b) -> Mat {

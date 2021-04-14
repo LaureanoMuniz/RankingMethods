@@ -7,7 +7,7 @@ from io import StringIO
 class Juego:
     def __init__(self, *args):
         if len(args) == 5:
-            fecha, i, j, pi, pj = args
+            fecha, i, pi, j, pj = args
         else:
             i, j, pi, pj = args
             fecha = "1"
@@ -29,7 +29,7 @@ class Torneo:
         stream = StringIO()
         stream.write(f"{self.n} {self.m}\n")
         for juego in self.juegos:
-            stream.write(f"{juego.fecha} {juego.i} {juego.j} {juego.pi} {juego.pj}\n")
+            stream.write(f"{juego.fecha} {juego.i} {juego.pi} {juego.j} {juego.pj}\n")
 
         return stream.getvalue()
 
