@@ -1,14 +1,16 @@
 import math
 from random import Random
-from experiments.python.generadores import Torneo, clusters, diagonal
+from experiments.python.generadores import Juego, Torneo, clusters, diagonal, torneo
 from experiments.python.rational import Rational, reduce, back_subst
 import enum
 from pathlib import Path
 import subprocess
-
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
+
+import numpy as np
 
 
 class Args(enum.Enum):
@@ -19,6 +21,7 @@ class Args(enum.Enum):
     INTERNAL_ID = "internal_id"
     SHOW_ID = "show_id"
     SIZE = "size"
+    FLOAT = "float"
 
     CMM = "0"
     WP = "1"
@@ -39,7 +42,11 @@ class Ranking:
         return distances
 
     def distance(self, o):
-        return sum(self.distances(o))
+        total = 0
+        dists = self.distances(o)
+        for d in dists:
+            total += abs(d)
+        return math.exp(total / len(dists))
 
     def from_file(file):
         with file.open() as f:
@@ -49,6 +56,23 @@ class Ranking:
                 _, pos, id, _ = line.split(',')
                 ranking[id] = int(pos)
             return Ranking(ranking)
+
+    def filt(self, equipos):
+        by_ranking = []
+        for e in self.ranking.keys():
+            if e in equipos:
+                while len(by_ranking) <= self.ranking[e]:
+                    by_ranking.append([])
+                by_ranking[self.ranking[e]-1].append(e)
+        last = 0
+        nuevo = dict()
+        for es in by_ranking:
+            if len(es) != 0:
+                last += 1
+                for e in es:
+                    nuevo[e] = last
+
+        return Ranking(nuevo)
 
 
 class Corrida:
@@ -96,9 +120,11 @@ class Corrida:
             for i in range(len(values) // 2):
                 rating[values[2*i]] = float(values[2*i+1])
             ranking = list(rating.keys())
-            ranking.sort(key=lambda x: rating[x])
+            ranking.sort(key=lambda x: -rating[x])
+            print(f"el primero es {ranking[0]}")
             self.ranking = Ranking({
                 ranking[i]: i+1 for i in range(len(ranking))})
+            self.ratings = rating
         else:
             self.ratings = list(map(lambda x: float(x), values))
 
@@ -116,20 +142,52 @@ def error(values, exact):
             diff = r
 
     # print(f" = {diff.num} / {diff.den}")
+    print(f"diff = {diff.num}")
     return diff.num / diff.den
 
 
-def precision(filepaths):
-    for f in filepaths:
+def precision():
+    filepaths = [
+        Path('tests/Tests_Propios/Futbol_2014.dat'),
+        Path('tests/Tests_Propios/Futbol_2010.dat'),
+        Path('tests/Tests_Propios/NBA_2020.dat'),
+        Path('tests/Tests_Propios/NBA_2019.dat'),
+    ]
+    xs = ["GE+double", "CHOLESKY+double", "GE+float", "CHOLESKY+float"]
+    cs = ["tab:orange", "tab:blue", "tab:green", "tab:purple"]
+    labs = ["Futbol 2014", "Furbol 2010", "NBA 2020", "NBA 2019"]
+    fig, axs = plt.subplots(len(filepaths), sharex=True)
+    for f, ax, lab in zip(filepaths, axs, labs):
         cmm = Corrida(f, Args.CMM, Args.EXACT_OUTPUT, Args.INTERNAL_ID)
-        cova = Corrida(f, Args.CHOLESKY, Args.EXACT_OUTPUT, Args.INTERNAL_ID)
+        cho = Corrida(f, Args.CHOLESKY, Args.EXACT_OUTPUT, Args.INTERNAL_ID)
+        cmmf = Corrida(f, Args.CMM, Args.EXACT_OUTPUT, Args.INTERNAL_ID, Args.FLOAT)
+        chof = Corrida(f, Args.CHOLESKY, Args.EXACT_OUTPUT, Args.INTERNAL_ID, Args.FLOAT)
+
         exact = Corrida(f, Args.CMM, Args.DISPLAY_MATRIX)
         mat = reduce(exact.mat)
         ex = back_subst(mat)
-        print(error(cmm.ratings, ex))
-        print(error(cova.ratings, ex))
-    pass
 
+        ys = [
+            error(cmm.ratings, ex),
+            error(cho.ratings, ex),
+            error(cmmf.ratings, ex),
+            error(chof.ratings, ex),
+        ]
+
+        for e in ys:
+            print(e)
+
+        ax.set_xscale('log')
+        h = ax.barh(np.arange(4), ys, color=cs)
+        # ax.set_yticks(np.arange(4))
+        # ax.set_yticklabels(xs)
+        ax.set_yticks(ticks=[])
+        ax.set_xlim(left=1e-17, right=1)
+        ax.set_ylabel(lab)
+        # ax.legend(["GE+double", "CHOLESKY+double", "GE+float", "CHOLESKY+float"])
+
+    fig.legend(h, xs, loc="upper right")
+    plt.savefig('experiments/results/precision.png')
 
 def tiempo(filepaths):
     fig, ax = plt.subplots()
@@ -144,28 +202,35 @@ def tiempo(filepaths):
 
 
 def tiempo_random():
-    fig, ax = plt.subplots()
+    fig, axs = plt.subplots(1, 3, sharey=True)
     rng = Random(1)
-    k = 10
-    xs = []
-    ys = []
-    cs = []
-    for k in tqdm([-100, 1, 100]):
-        for n in tqdm(range(500, 1001, 100)):
-            q = k
-            if k == -100:
-                q = 1
-            torneo = clusters(rng, n, q, 1/200, 1/2000)
-            if k == -100:
-                time = Corrida(torneo, Args.CHOLESKY, Args.TIME).elapsed
-            else:
-                time = Corrida(torneo, Args.CMM, Args.RALA, Args.TIME).elapsed
-            xs.append(n)
-            ys.append(math.log(time))
-            cs.append(k)
-    mp = ax.scatter(xs, ys, c=cs, cmap='viridis')
 
-    fig.colorbar(mp)
+    rng = Random(1)
+    for ax, to in tqdm(zip(axs, [
+            lambda n: clusters(rng, n, 1, 1/200, 1/2000),
+            lambda n: clusters(rng, n, 100, 1/200, 1/2000),
+            lambda n: torneo(rng, n)])):
+        xs = []
+        ys = []
+        cs = []
+        for n in tqdm(range(500, 1001, 100)):
+            for lala in range(10):
+                for args, col in [((Args.CHOLESKY,), "tab:orange"), ((Args.CMM,), "tab:blue"), ((Args.CMM, Args.RALA), "tab:green")]:
+                    tor = to(n)
+                    time = Corrida(tor, *args, Args.TIME).elapsed
+                    xs.append(n)
+                    ys.append(time)
+                    cs.append(col)
+        # ax.scale_y('log')
+        mp = ax.scatter(xs, ys, c=cs)
+
+    # fig.colorbar(mp)
+    plt.yscale('log')
+    # fig.ylabel('')
+    cho = mpatches.Patch(color='orange', label='cholesky')
+    eg = mpatches.Patch(color='blue', label='EG')
+    egrala = mpatches.Patch(color='green', label='EG+Rala')
+    fig.legend(handles=[cho, eg, egrala])
 
     plt.show()
 
@@ -198,17 +263,62 @@ def distance(filepath):
     posta = Ranking.from_file(
         Path() / 'tests' / 'Tests_Propios' / 'Tennis_Ranking_2021.csv')
 
+    xs = []
     cs = []
 
     for algo in [Args.CMM, Args.ELO, Args.WP]:
-        ys = []
         rankings = Corrida(filepath, algo, Args.SHOW_ID).ranking
-        for d in rankings.distances(posta):
+        rankings = rankings.filt(posta.ranking.keys())
+        dis = rankings.distance(posta)
+        # for d in rankings.distances(posta):
             # cs.append(algo.value)
-            ys.append(d)
+            # ys.append(d)
+        cs.append(dis)
+        xs.append(algo.value)
 
-        ax.hist(ys, bins=20, histtype='step')
+        # ax.hist(ys, bins=20, histtype='step')
+    ax.bar(xs, cs)
     plt.show()
+
+
+def logistic(f: float):
+    return math.tanh(f)/2 + .5
+
+
+def estrategia(filepath):
+    rng = Random(1)
+
+    torneo = Torneo.from_file(filepath)
+    c = Corrida(torneo, Args.CHOLESKY, Args.SHOW_ID)
+    ratings = c.ratings
+    rankings = c.ranking.ranking
+    equipos = list(ratings.keys())
+
+    def esperanza(yo, x):
+        return logistic(ratings[yo] - ratings[x]) * ratings[x]
+
+    methods = [lambda yo, x: -ratings[x], lambda yo, x: ratings[x], esperanza]
+
+    eqs = rng.shuffle(equipos)
+    eqs = equipos[:10]
+    for eq in eqs:
+        result = [rankings[eq]]
+        for method in methods:
+            equipos.sort(key=lambda x: method(eq, x))
+            elegidos = equipos[:10]
+            juegos = torneo.juegos.copy()
+            for equipo in elegidos:
+                if rng.random() < logistic(ratings[equipo] - ratings[eq]):
+                    juegos.append(Juego(equipo, eq, 1, 0))
+                else:
+                    juegos.append(Juego(equipo, eq, 0, 1))
+            modificado = Torneo(torneo.n, juegos)
+
+            result.append(Corrida(modificado, Args.CHOLESKY, Args.SHOW_ID).ranking.ranking[eq])
+
+        for f in result:
+            print(f)
+        print()
 
 
 def experimentar():
@@ -221,8 +331,14 @@ def experimentar():
         'test_completos/test_completo_100_4.in',
         'test_completos/test_completo_1000_8.in',
     ])"""
-    # precision(['test_completos/test_completo_100_4.in'])
-    # tiempo_random()
+    # precision([Path('tests/test_completos/test_completo_100_4.in')])
+    # precision()
+    """precision([
+        Path('tests/test_completos/test_completo_100_4.in'),
+        Path('tests/test_completos/test_completo_100_4.in')
+        ])"""
+    tiempo_random()
     # diag()
-    distance(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
+    # distance(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
+    # estrategia(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
     # precision(['test-prob-1.in'])

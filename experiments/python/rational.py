@@ -47,7 +47,7 @@ def reduce(mat):
     res = [[Rational(0, 1) for _ in range(m)] for _ in range(n)]
     res[0][0] = Rational(mat[0][0], 1)
     for k in range(0, n-1):
-        print(f"k = {k}")
+        # print(f"k = {k}")
         k1 = (k+1)%3
         k2 = (k+2)%3
         kk = k%3
@@ -81,7 +81,7 @@ def back_subst(mat):
     n = len(mat)
     res = [None for _ in range(n)]
     for i in range(n-1, -1, -1):
-        print(f"i = {i}")
+        # print(f"i = {i}")
         r = mat[i][n]
         for j in range(i+1, n):
             r -= res[j] * mat[i][j]

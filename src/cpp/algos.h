@@ -135,7 +135,6 @@ auto eliminacion_gaussiana(Mat A, Mat b) -> Mat {
                 sistema.operacion_2(i, j, -coef);
         }
     }
-    return sistema;
     return backwards_substitution(sistema);
 }
 
@@ -167,20 +166,24 @@ auto cholesky(Mat A, Mat b) -> Mat {
 
 template<typename Of>
 void print_rankings(const Torneo &torneo, const Mat & rankings, Of &file) {
-    vector<pair<int, ld>> results;
+    vector<pair<string, ld>> results;
     for (int i = 0; i < torneo.equipos(); ++i) {
         results.emplace_back(
-            config.internal_id ? i : stoi(torneo.nombres[i]),
+            config.internal_id ? to_string(i) : torneo.nombres[i],
             rankings(i));
     }
-    sort(results.begin(), results.end());
+    sort(results.begin(), results.end(), [&](auto a, auto b) {
+        if(a.first.size() != b.first.size())
+            return a.first.size() < b.first.size();
+        return a < b;
+    });
     for(auto [player, rank] : results) {
         if(config.show_id) {
             file << player << " ";
         }
         if(config.float_output_exact) {
             int ex = 0;
-            ld res = frexp(rank, &ex) * pow(ld(2.0), ld(54));
+            ld res = frexp(double(rank), &ex) * pow(double(2.0), double(54));
             ex -= 54;
             file << (long long)(res + 0.5) << " " << -ex << endl;
         } else {

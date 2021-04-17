@@ -11,8 +11,6 @@
 #include <chrono>
 using namespace std;
 
-using ld = double;
-
 struct Config {
     bool float_output_exact = false;
     bool display_matrix = false;
@@ -20,6 +18,7 @@ struct Config {
     bool rala = false;
     bool internal_id = false;
     bool show_id = false;
+    bool single = false;
     string input;
     string output;
     string algo;
@@ -38,15 +37,30 @@ destination:
 }
 
 // No me asesinen
-namespace Normal {
+namespace NormalDouble {
+    #define ld double
     #include "mat.h"
     #include "algos.h"
 };
 
-namespace Rala {
+namespace RalaDouble {
+    #define ld double
     #include "mat_rala.h"
     #include "algos.h"
 };
+
+namespace NormalFloat {
+    #define ld float
+    #include "mat.h"
+    #include "algos.h"
+};
+
+namespace RalaFloat {
+    #define ld float
+    #include "mat_rala.h"
+    #include "algos.h"
+};
+
 
 
 
@@ -66,9 +80,15 @@ int main(int argc, char **argv) {
         else if(s == "rala") config.rala = true;
         else if(s == "internal_id") config.internal_id = true;
         else if(s == "show_id") config.show_id = true;
+        else if(s == "float") config.single = true;
     }
 
-    if(config.rala) Rala::correr();
-    else Normal::correr();
+    if(config.rala) {
+        if(config.single) RalaFloat::correr();
+        else RalaDouble::correr();
+    } else {
+        if(config.single) NormalFloat::correr();
+        else NormalDouble::correr();
+    }
     return 0;
 }
