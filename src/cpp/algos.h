@@ -238,8 +238,8 @@ Mat elo_Ratings(const Torneo &torneo, const ld K = 32){
     for (auto partido_actual: torneo.partidos){
         //numeros que hacen falta
         ld scoreI,scoreJ = 0.5;
-        if(partido_actual.puntos_i > partido_actual.puntos_j){scoreI = 0; scoreJ = 1;}
-        else if (partido_actual.puntos_i < partido_actual.puntos_j){scoreI = 1; scoreJ = 0;}
+        if(partido_actual.puntos_i < partido_actual.puntos_j){scoreI = 0; scoreJ = 1;}
+        else if (partido_actual.puntos_i > partido_actual.puntos_j){scoreI = 1; scoreJ = 0;}
         ld ratingDiff_J = ratings(partido_actual.id_i) - ratings(partido_actual.id_j);
         ld ratingDiff_I = - ratingDiff_J;
         ld expected_J = elo_expectedScore(ratingDiff_J);

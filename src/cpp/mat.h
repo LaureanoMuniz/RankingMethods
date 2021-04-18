@@ -1,5 +1,5 @@
 
-ld eps = 1e-5;
+ld eps = 1e-9;
 
 struct Mat {
     int n, m;

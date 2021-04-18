@@ -46,7 +46,7 @@ class Ranking:
         dists = self.distances(o)
         for d in dists:
             total += abs(d)
-        return math.exp(total / len(dists))
+        return math.exp(total / len(dists)) - 1
 
     def from_file(file):
         with file.open() as f:
@@ -121,7 +121,6 @@ class Corrida:
                 rating[values[2*i]] = float(values[2*i+1])
             ranking = list(rating.keys())
             ranking.sort(key=lambda x: -rating[x])
-            print(f"el primero es {ranking[0]}")
             self.ranking = Ranking({
                 ranking[i]: i+1 for i in range(len(ranking))})
             self.ratings = rating
@@ -189,6 +188,7 @@ def precision():
     fig.legend(h, xs, loc="upper right")
     plt.savefig('experiments/results/precision.png')
 
+
 def tiempo(filepaths):
     fig, ax = plt.subplots()
     for f in filepaths:
@@ -232,7 +232,7 @@ def tiempo_random():
     egrala = mpatches.Patch(color='green', label='EG+Rala')
     fig.legend(handles=[cho, eg, egrala])
 
-    plt.show()
+    plt.savefig('experiments/results/tiempo.png')
 
 
 def diag():
@@ -266,19 +266,83 @@ def distance(filepath):
     xs = []
     cs = []
 
-    for algo in [Args.CMM, Args.ELO, Args.WP]:
+    for algo, name in [(Args.CMM, "CMM"), (Args.ELO, "ELO"), (Args.WP, "WP")]:
         rankings = Corrida(filepath, algo, Args.SHOW_ID).ranking
         rankings = rankings.filt(posta.ranking.keys())
         dis = rankings.distance(posta)
         # for d in rankings.distances(posta):
-            # cs.append(algo.value)
-            # ys.append(d)
+        # cs.append(algo.value)
+        # ys.append(d)
         cs.append(dis)
-        xs.append(algo.value)
+        xs.append(name)
 
         # ax.hist(ys, bins=20, histtype='step')
     ax.bar(xs, cs)
-    plt.show()
+    plt.ylabel('eta')
+    plt.savefig('experiments/results/distance.png')
+
+
+def empate(file):
+    tor = Torneo.from_file(file)
+    ratings = Corrida(tor, Args.CMM, Args.SHOW_ID).ratings
+    jugadores = list(ratings.keys())
+
+    fig, ax = plt.subplots()
+    rng = Random(1)
+    xs = []
+    ys = []
+    for sdjfhkaf in range(100):
+        a = jugadores[rng.randint(0, len(jugadores)-1)]
+        while True:
+            b = jugadores[rng.randint(0, len(jugadores)-1)]
+            if a != b:
+                break
+
+
+        juegos = tor.juegos.copy()
+        juegos.append(Juego(a, b, 0, 0))
+
+        new = Corrida(Torneo(tor.n, juegos), Args.CMM, Args.SHOW_ID).ratings
+
+        xs.append(ratings[b]-ratings[a])
+        ys.append(new[a]-ratings[a])
+
+    ax.scatter(xs, ys)
+    plt.axhline(0, color='black')
+    plt.axvline(0, color='black')
+    plt.savefig('experiments/results/empate.png')
+
+
+def diff(filepaths):
+
+    def ranking(file, algo):
+        return Corrida(file, algo, Args.SHOW_ID).ranking
+
+    xs = [0]*6
+    ys = [0]*6
+    cs = [0]*6
+    for i, name, col, file in zip([0, 1], ['premier', 'nba'], ['tab:orange', 'tab:blue'], filepaths):
+        fig, ax = plt.subplots()
+
+        rankings = {algo: ranking(file, algo) for algo in [Args.CMM, Args.ELO, Args.WP]}
+
+        xs[i] = f'CMM-ELO-{name}'
+        ys[i] = rankings[Args.CMM].distance(rankings[Args.ELO])
+
+        xs[i+2] = f'ELO-WP-{name}'
+        ys[i+2] = rankings[Args.ELO].distance(rankings[Args.WP])
+
+        xs[i+4] = f'WP-CMM-{name}'
+        ys[i+4] = rankings[Args.WP].distance(rankings[Args.CMM])
+        # ax.hist(ys, bins=20, histtype='step')
+
+        cs[i] = col
+        cs[i+2] = col
+        cs[i+4] = col
+
+    ax.bar(xs, ys, color=cs)
+    plt.ylabel('eta')
+    plt.savefig(f'experiments/results/diffs.png')
 
 
 def logistic(f: float):
@@ -295,15 +359,23 @@ def estrategia(filepath):
     equipos = list(ratings.keys())
 
     def esperanza(yo, x):
-        return logistic(ratings[yo] - ratings[x]) * ratings[x]
+        return -logistic(ratings[yo] - ratings[x]) * ratings[x]
 
     methods = [lambda yo, x: -ratings[x], lambda yo, x: ratings[x], esperanza]
 
     eqs = rng.shuffle(equipos)
-    eqs = equipos[:10]
-    for eq in eqs:
-        result = [rankings[eq]]
-        for method in methods:
+    eqs = equipos
+
+    fig, ax = plt.subplots()
+
+    ys = []
+    xs = []
+    cs = []
+
+    for method, col in zip(methods, ["tab:orange", "tab:green", "tab:blue"]):
+        arr = np.zeros(len(eqs))
+        for eq, i in zip(eqs, range(len(eqs))):
+            orig = rankings[eq]
             equipos.sort(key=lambda x: method(eq, x))
             elegidos = equipos[:10]
             juegos = torneo.juegos.copy()
@@ -314,11 +386,17 @@ def estrategia(filepath):
                     juegos.append(Juego(equipo, eq, 0, 1))
             modificado = Torneo(torneo.n, juegos)
 
-            result.append(Corrida(modificado, Args.CHOLESKY, Args.SHOW_ID).ranking.ranking[eq])
+            rank = Corrida(modificado, Args.CHOLESKY, Args.SHOW_ID).ranking.ranking[eq]
+            diff = math.log(orig) - math.log(rank)
+            ys.append(diff)
+            arr[i] = diff
+            xs.append(orig)
 
-        for f in result:
-            print(f)
-        print()
+            cs.append(col)
+        print(f"{arr.mean()} {arr.var()}")
+
+    ax.scatter(xs, ys, c=cs, s=2)
+    plt.show()
 
 
 def experimentar():
@@ -337,8 +415,14 @@ def experimentar():
         Path('tests/test_completos/test_completo_100_4.in'),
         Path('tests/test_completos/test_completo_100_4.in')
         ])"""
-    tiempo_random()
+    # tiempo_random()
+    # estrategia()
     # diag()
+    """diff([
+        Path() / 'tests' / 'Tests_Propios' / 'premierleague.dat',
+        Path() / 'tests' / 'Tests_Propios' / 'NBA_2020.dat'
+    ])"""
     # distance(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
+    empate(Path() / 'tests' / 'Tests_Propios' / 'NBA_2020.dat')
     # estrategia(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
     # precision(['test-prob-1.in'])
