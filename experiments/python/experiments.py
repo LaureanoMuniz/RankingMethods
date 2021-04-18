@@ -156,6 +156,7 @@ def precision():
     cs = ["tab:orange", "tab:blue", "tab:green", "tab:purple"]
     labs = ["Futbol 2014", "Furbol 2010", "NBA 2020", "NBA 2019"]
     fig, axs = plt.subplots(len(filepaths), sharex=True)
+    fig.suptitle('Precisión')
     for f, ax, lab in zip(filepaths, axs, labs):
         cmm = Corrida(f, Args.CMM, Args.EXACT_OUTPUT, Args.INTERNAL_ID)
         cho = Corrida(f, Args.CHOLESKY, Args.EXACT_OUTPUT, Args.INTERNAL_ID)
@@ -186,6 +187,7 @@ def precision():
         # ax.legend(["GE+double", "CHOLESKY+double", "GE+float", "CHOLESKY+float"])
 
     fig.legend(h, xs, loc="upper right")
+    plt.xlabel("error calculado con la norma infinito (sin unidad) (escala log)")
     plt.savefig('experiments/results/precision.png')
 
 
@@ -205,11 +207,15 @@ def tiempo_random():
     fig, axs = plt.subplots(1, 3, sharey=True)
     rng = Random(1)
 
-    rng = Random(1)
+    fig.suptitle('Tiempo de Ejecución en Distintas Instancias')
+
+    axs[0].set_ylabel('tiempo de ejecución (s) (escala log)')
+
     for ax, to in tqdm(zip(axs, [
             lambda n: clusters(rng, n, 1, 1/200, 1/2000),
             lambda n: clusters(rng, n, 100, 1/200, 1/2000),
             lambda n: torneo(rng, n)])):
+        ax.set_xlabel('cantidad de equipos')
         xs = []
         ys = []
         cs = []
@@ -224,13 +230,16 @@ def tiempo_random():
         # ax.scale_y('log')
         mp = ax.scatter(xs, ys, c=cs)
 
+
     # fig.colorbar(mp)
     plt.yscale('log')
     # fig.ylabel('')
-    cho = mpatches.Patch(color='orange', label='cholesky')
-    eg = mpatches.Patch(color='blue', label='EG')
-    egrala = mpatches.Patch(color='green', label='EG+Rala')
+    cho = mpatches.Patch(color='tab:orange', label='cholesky')
+    eg = mpatches.Patch(color='tab:blue', label='EG')
+    egrala = mpatches.Patch(color='tab:green', label='EG+Rala')
     fig.legend(handles=[cho, eg, egrala])
+
+    fig.set_size_inches(fig.get_size_inches()[0]*2, fig.get_size_inches()[1])
 
     plt.savefig('experiments/results/tiempo.png')
 
@@ -265,7 +274,7 @@ def distance(filepath):
 
     xs = []
     cs = []
-
+    fig.suptitle('Distancias al Ranking Oficial')
     for algo, name in [(Args.CMM, "CMM"), (Args.ELO, "ELO"), (Args.WP, "WP")]:
         rankings = Corrida(filepath, algo, Args.SHOW_ID).ranking
         rankings = rankings.filt(posta.ranking.keys())
@@ -278,7 +287,7 @@ def distance(filepath):
 
         # ax.hist(ys, bins=20, histtype='step')
     ax.bar(xs, cs)
-    plt.ylabel('eta')
+    plt.ylabel('distancia eta al ranking oficial (sin unidad)')
     plt.savefig('experiments/results/distance.png')
 
 
@@ -288,6 +297,7 @@ def empate(file):
     jugadores = list(ratings.keys())
 
     fig, ax = plt.subplots()
+    fig.suptitle('Efecto del Empate')
     rng = Random(1)
     xs = []
     ys = []
@@ -298,7 +308,6 @@ def empate(file):
             if a != b:
                 break
 
-
         juegos = tor.juegos.copy()
         juegos.append(Juego(a, b, 0, 0))
 
@@ -308,6 +317,8 @@ def empate(file):
         ys.append(new[a]-ratings[a])
 
     ax.scatter(xs, ys)
+    plt.ylabel('variación del rating (sin unidad)')
+    plt.xlabel('diferencia entre los rankings de los equipos (sin unidad)')
     plt.axhline(0, color='black')
     plt.axvline(0, color='black')
     plt.savefig('experiments/results/empate.png')
@@ -321,18 +332,17 @@ def diff(filepaths):
     xs = [0]*6
     ys = [0]*6
     cs = [0]*6
-    for i, name, col, file in zip([0, 1], ['premier', 'nba'], ['tab:orange', 'tab:blue'], filepaths):
-        fig, ax = plt.subplots()
+    for i, name, col, file in zip([0, 1], ['', ' '], ['tab:orange', 'tab:blue'], filepaths):
 
         rankings = {algo: ranking(file, algo) for algo in [Args.CMM, Args.ELO, Args.WP]}
 
-        xs[i] = f'CMM-ELO-{name}'
+        xs[i] = f'CMM-ELO{name}'
         ys[i] = rankings[Args.CMM].distance(rankings[Args.ELO])
 
-        xs[i+2] = f'ELO-WP-{name}'
+        xs[i+2] = f'ELO-WP{name}'
         ys[i+2] = rankings[Args.ELO].distance(rankings[Args.WP])
 
-        xs[i+4] = f'WP-CMM-{name}'
+        xs[i+4] = f'WP-CMM{name}'
         ys[i+4] = rankings[Args.WP].distance(rankings[Args.CMM])
         # ax.hist(ys, bins=20, histtype='step')
 
@@ -340,8 +350,14 @@ def diff(filepaths):
         cs[i+2] = col
         cs[i+4] = col
 
+    fig, ax = plt.subplots()
+    fig.suptitle('Distancias Entre los Rankings')
+
     ax.bar(xs, ys, color=cs)
-    plt.ylabel('eta')
+    plt.ylabel('distancia eta (sin unidad)')
+    premier = mpatches.Patch(color='tab:orange', label='premier league')
+    nba = mpatches.Patch(color='tab:blue', label='nba')
+    fig.legend(handles=[premier, nba])
     plt.savefig(f'experiments/results/diffs.png')
 
 
@@ -395,8 +411,17 @@ def estrategia(filepath):
             cs.append(col)
         print(f"{arr.mean()} {arr.var()}")
 
+    plt.ylabel('mejora en el logaritmo del ranking (sin unidad)')
+    plt.xlabel('ranking inical (sin unidad)')
     ax.scatter(xs, ys, c=cs, s=2)
-    plt.show()
+
+    fig.legend(handles=[
+        mpatches.Patch(color='tab:orange', label='estrategia #2'),
+        mpatches.Patch(color='tab:green', label='estrategia #1'),
+        mpatches.Patch(color='tab:blue', label='estrategia #3')
+    ])
+    fig.suptitle('Estrategias Para Aumentar el Rating')
+    plt.savefig('experiments/results/estrategia.png')
 
 
 def experimentar():
@@ -418,11 +443,11 @@ def experimentar():
     # tiempo_random()
     # estrategia()
     # diag()
-    """diff([
+    '''diff([
         Path() / 'tests' / 'Tests_Propios' / 'premierleague.dat',
         Path() / 'tests' / 'Tests_Propios' / 'NBA_2020.dat'
-    ])"""
-    # distance(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
-    empate(Path() / 'tests' / 'Tests_Propios' / 'NBA_2020.dat')
+    ])'''
+    distance(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
+    # empate(Path() / 'tests' / 'Tests_Propios' / 'NBA_2020.dat')
     # estrategia(Path() / 'tests' / 'Tests_Propios' / 'Tenis_2020_21.dat')
     # precision(['test-prob-1.in'])

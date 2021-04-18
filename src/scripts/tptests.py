@@ -26,8 +26,11 @@ class Tp1TestCase(unittest.TestCase):
       actual = [float(x.strip()) for x in factual.readlines() if len(x.strip()) > 0]
 
     self.assertEqual(len(expected), len(actual), "Se esperaban {0} valores en la solucion pero se encontraron {1}".format(len(expected), len(actual)))
+    mx = 0
     for index, (a, e) in enumerate(zip(actual, expected)):
+      mx = max(mx, abs(a-e))
       self.assertAlmostEqual(a, e, delta=0.0001, msg="Se esperaba {0} en la linea {1} pero se encontro {2}".format(e,index+1,a))
+    print(mx)
 
 
 def addTest(cls, inputPath, expectedPath, outputPath):
